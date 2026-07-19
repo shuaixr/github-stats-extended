@@ -168,6 +168,15 @@ describe("Test fetchStats", () => {
     });
   });
 
+  it("should request stars in smaller pages to stay within GitHub GraphQL resource limits", async () => {
+    await fetchStats("anuraghazra");
+
+    const request = JSON.parse(mock.history.post[0].data);
+
+    expect(request.query).toContain("repositories(first: $first");
+    expect(request.variables.first).toBe(50);
+  });
+
   it("should stop fetching when there are repos with zero stars", async () => {
     mock.reset();
     mock

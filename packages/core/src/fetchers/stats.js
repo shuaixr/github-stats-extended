@@ -10,9 +10,11 @@ import { logger } from "../common/log.js";
 import { buildSearchFilter, parseOwnerAffiliations } from "../common/ops.js";
 import { retryer } from "../common/retryer.js";
 
+const REPOSITORIES_PER_PAGE = 50;
+
 // GraphQL queries.
 const GRAPHQL_REPOS_FIELD = `
-  repositories(first: 100, after: $after, ownerAffiliations: $ownerAffiliations, orderBy: {direction: DESC, field: STARGAZERS}) {
+  repositories(first: $first, after: $after, ownerAffiliations: $ownerAffiliations, orderBy: {direction: DESC, field: STARGAZERS}) {
     totalCount
     nodes {
       name
@@ -28,7 +30,7 @@ const GRAPHQL_REPOS_FIELD = `
 `;
 
 const GRAPHQL_REPOS_QUERY = `
-  query userInfo($login: String!, $after: String, $ownerAffiliations: [RepositoryAffiliation]) {
+  query userInfo($login: String!, $first: Int!, $after: String, $ownerAffiliations: [RepositoryAffiliation]) {
     user(login: $login) {
       ${GRAPHQL_REPOS_FIELD}
     }
@@ -36,7 +38,7 @@ const GRAPHQL_REPOS_QUERY = `
 `;
 
 const GRAPHQL_STATS_QUERY = `
-  query userInfo($login: String!, $after: String, $includeMergedPullRequests: Boolean!, $includeDiscussions: Boolean!, $includeDiscussionsAnswers: Boolean!, $startTime: DateTime = null, $ownerAffiliations: [RepositoryAffiliation]) {
+  query userInfo($login: String!, $first: Int!, $after: String, $includeMergedPullRequests: Boolean!, $includeDiscussions: Boolean!, $includeDiscussionsAnswers: Boolean!, $startTime: DateTime = null, $ownerAffiliations: [RepositoryAffiliation]) {
     user(login: $login) {
       name
       login
@@ -126,7 +128,7 @@ const statsFetcher = async ({
   while (hasNextPage) {
     const variables = {
       login: username,
-      first: 100,
+      first: REPOSITORIES_PER_PAGE,
       after: endCursor,
       includeMergedPullRequests,
       includeDiscussions,
